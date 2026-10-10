@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>RobsSpacePatrol.DTO</PackageId>
+    <Version>1.0.4</Version>
+    <Authors>Rob</Authors>
+    <Description>Data transfer objects shared by the Rob's Space Patrol applications.</Description>
+    <AssemblyVersion>2026.10.9.12</AssemblyVersion>
+    <FileVersion>2026.10.9.12</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Game\GameStartRequest.cs" />
+  </ItemGroup>
+
+</Project>

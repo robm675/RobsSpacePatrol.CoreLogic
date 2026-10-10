@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>RobsSpacePatrol.Library</PackageId>
+    <Version>1.0.7</Version>
+    <Authors>Rob</Authors>
+    <Description>Core game logic for Rob's Space Patrol.</Description>
+    <AssemblyVersion>2026.10.9.2266</AssemblyVersion>
+    <FileVersion>2026.10.9.2266</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CurrentQuadrant\**" />
+    <Compile Remove="Starship\**" />
+    <Compile Remove="Events\**" />
+    <Compile Remove="Galaxy\**" />
+    <EmbeddedResource Remove="CurrentQuadrant\**" />
+    <EmbeddedResource Remove="Starship\**" />
+    <EmbeddedResource Remove="Events\**" />
+    <EmbeddedResource Remove="Galaxy\**" />
+    <None Remove="CurrentQuadrant\**" />
+    <None Remove="Starship\**" />
+    <None Remove="Events\**" />
+    <None Remove="Galaxy\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="eNums\eCommandResult.cs" />
+    <Compile Remove="eNums\eCommands.cs" />
+    <Compile Remove="eNums\eDevice.cs" />
+    <Compile Remove="eNums\eGameStatus.cs" />
+    <Compile Remove="eNums\eNavMessage.cs" />
+    <Compile Remove="Game\MaintenanceResult.cs" />
+    <Compile Remove="Game\Result.cs" />
+    <Compile Remove="Utils\CalculationUtilities.cs" />
+    <Compile Remove="Utils\CheckForObject.cs" />
+    <Compile Remove="Utils\Coord.cs" />
+    <Compile Remove="Utils\DBConverters.cs" />
+    <Compile Remove="Utils\ExpressionTreeCloner.cs" />
+    <Compile Remove="Utils\ExpressionTreeCloner.FieldBased.cs" />
+    <Compile Remove="Utils\ExpressionTreeCloner.PropertyBased.cs" />
+    <Compile Remove="Utils\GetEmptySector.cs" />
+    <Compile Remove="Utils\ICloneFactory.cs" />
+    <Compile Remove="Utils\IGetEmptySector.cs" />
+    <Compile Remove="Utils\ILogging.cs" />
+    <Compile Remove="Utils\IRandomFactory.cs" />
+    <Compile Remove="Utils\Logging.cs" />
+    <Compile Remove="Utils\MappingProfile.cs" />
+    <Compile Remove="Utils\ObjectCopy.cs" />
+    <Compile Remove="Utils\ObjectExtensions.cs" />
+    <Compile Remove="Utils\RandomFactory.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DeepCloner" Version="0.10.4" />
+    <PackageReference Include="NLog" Version="6.2.0" />
+    <PackageReference Include="RandomGen" Version="1.1.6" />
+    <PackageReference Include="Riok.Mapperly" Version="4.3.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RobsSpacePatrol.DTO\RobsSpacePatrol.DTO.csproj" />
+  </ItemGroup>
+
+</Project>
