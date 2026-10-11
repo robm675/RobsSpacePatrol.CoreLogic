@@ -122,6 +122,7 @@ public class NAVTests
     public void testDamaged_OutsideGalaxyTop()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -140,6 +141,7 @@ public class NAVTests
     public void testDamaged_OutsideGalaxyLeft()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -194,6 +196,7 @@ public class NAVTests
     public void testDamaged_NotEnoughEnergy_ShieldAvail()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -215,6 +218,7 @@ public class NAVTests
     public void testDamaged_NotEnoughEnergy()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -236,8 +240,9 @@ public class NAVTests
     public void testDamaged_ObjectInWay()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarQuantity(1)
-            .addStarLocation(new Coord (5,0))
+            .addStarLocation(new Coord(5, 0))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -259,6 +264,7 @@ public class NAVTests
     public void testDamaged_Good_InsideQuadrant()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -283,6 +289,7 @@ public class NAVTests
     public void testDamaged_Good_DifferentQuadrant()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -349,6 +356,7 @@ public class NAVTests
     public void test_VerifyLocationAfterNAV_Space1()
     {
         var rf = new RandomFactoryBuilder()
+          .setStarbaseLocation(new(5, 5))
           .setStarshipQuadrant(new Coord(0, 0))
           .setStarshipSector(new Coord(0, 0));
 
@@ -373,6 +381,7 @@ public class NAVTests
     public void test_VerifyLocationAfterNAV_Space1_Point1()
     {
         var rf = new RandomFactoryBuilder()
+          .setStarbaseLocation(new(5, 5))
           .setStarshipQuadrant(new Coord(0, 0))
           .setStarshipSector(new Coord(0, 0));
 

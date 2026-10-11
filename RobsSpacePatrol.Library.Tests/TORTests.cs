@@ -35,11 +35,12 @@ public class TORTests
     public void test_TOR_NoTorps()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .setStarbaseLocation(new(5, 5))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
-           .setStarshipQuadrant(new Coord(0,0))
+           .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
@@ -58,6 +59,7 @@ public class TORTests
     public void test_TOR_verifiedContents_NoEnemies()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -75,9 +77,10 @@ public class TORTests
     public void test_TOR_verifiedContents_HIT_Enemy()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 0))
-            .addEnemyLocation(new Coord (6, 1))
-            .addEnemyLocation(new Coord (4, 4))
+            .setStarbaseLocation(new(5, 5))
+            .addEnemyLocation(new Coord(1, 0))
+            .addEnemyLocation(new Coord(6, 1))
+            .addEnemyLocation(new Coord(4, 4))
             .setEnemyChance(100)
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
@@ -102,7 +105,8 @@ public class TORTests
     public void test_TOR_verifiedContents_HIT_One_Enemy()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 0))
+            .setStarbaseLocation(new(5, 5))
+            .addEnemyLocation(new Coord(1, 0))
             .setEnemyChance(Global.EnemyZeroOne + 2)
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
@@ -128,9 +132,10 @@ public class TORTests
     public void test_TOR_verifiedContents_MISS()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 0))
-            .addEnemyLocation(new Coord (6, 1))
-            .addEnemyLocation(new Coord (4, 4))
+            .setStarbaseLocation(new(5, 5))
+            .addEnemyLocation(new Coord(1, 0))
+            .addEnemyLocation(new Coord(6, 1))
+            .addEnemyLocation(new Coord(4, 4))
             .setEnemyChance(100)
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
@@ -151,11 +156,12 @@ public class TORTests
     public void test_TOR_verifiedContents_HIT_StarDestroyed()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 7))
-            .addEnemyLocation(new Coord (6, 7))
-            .addEnemyLocation(new Coord (4, 7))
+            .setStarbaseLocation(new(5, 5))
+            .addEnemyLocation(new Coord(1, 7))
+            .addEnemyLocation(new Coord(6, 7))
+            .addEnemyLocation(new Coord(4, 7))
             .setEnemyChance(100)
-            .addStarLocation(new Coord (1, 0))
+            .addStarLocation(new Coord(1, 0))
             .setStarQuantity(1)
             .setStarDestroyedChance(100)
             .setStarshipQuadrant(new Coord(0, 0))
@@ -180,11 +186,12 @@ public class TORTests
     public void test_TOR_verifiedContents_HIT_StarSurvived()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 7))
-            .addEnemyLocation(new Coord (6, 7))
-            .addEnemyLocation(new Coord (4, 7))
+            .setStarbaseLocation(new(5, 5))
+            .addEnemyLocation(new Coord(1, 7))
+            .addEnemyLocation(new Coord(6, 7))
+            .addEnemyLocation(new Coord(4, 7))
             .setEnemyChance(100)
-            .addStarLocation(new Coord (1, 0))
+            .addStarLocation(new Coord(1, 0))
             .setStarQuantity(1)
             .setStarDestroyedChance(0)
             .setStarshipQuadrant(new Coord(0, 0))
@@ -210,10 +217,10 @@ public class TORTests
     public void test_TOR_verifiedContents_HIT_StarBase_Destroyed()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord (1, 7))
-            .addEnemyLocation(new Coord (6, 7))
-            .addEnemyLocation(new Coord (4, 7))
-            .setStarbaseLocation(new Coord (1, 0))
+            .addEnemyLocation(new Coord(1, 7))
+            .addEnemyLocation(new Coord(6, 7))
+            .addEnemyLocation(new Coord(4, 7))
+            .setStarbaseLocation(new Coord(1, 0))
             .setStarBaseChance(100)
             .setEnemyChance(100)
             .setStarshipQuadrant(new Coord(0, 0))

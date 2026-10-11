@@ -48,9 +48,9 @@ public class MaintResultTests
     {
         var rf = new RandomFactoryBuilder()
            .setStarBaseChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
-           .setStarshipQuadrant(new Coord (0, 0))
-           .setStarshipSector(new Coord (0, 0));
+           .setStarbaseLocation(new Coord(1, 1))
+           .setStarshipQuadrant(new Coord(0, 0))
+           .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -74,9 +74,9 @@ public class MaintResultTests
     {
         var rf = new RandomFactoryBuilder()
            .setStarBaseChance(100)
-           .setStarbaseLocation(new Coord(1,1))
-           .setStarshipQuadrant(new Coord (0, 0))
-           .setStarshipSector(new Coord (sectorX, sectorY));
+           .setStarbaseLocation(new Coord(1, 1))
+           .setStarshipQuadrant(new Coord(0, 0))
+           .setStarshipSector(new Coord(sectorX, sectorY));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -96,9 +96,9 @@ public class MaintResultTests
         var rf = new RandomFactoryBuilder()
          .setStarBaseChance(100)
          .setStartingMissionTime(startMissionTime)
-         .setStarbaseLocation(new Coord (1, 1))
-         .setStarshipQuadrant(new Coord (0, 0))
-         .setStarshipSector(new Coord (0, 0));
+         .setStarbaseLocation(new Coord(1, 1))
+         .setStarshipQuadrant(new Coord(0, 0))
+         .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
         var result = game.RunRoutineMaintenance(1);
@@ -111,9 +111,9 @@ public class MaintResultTests
     {
         var rf = new RandomFactoryBuilder()
         .setStarBaseChance(100)
-        .setStarbaseLocation(new Coord(1,1))
-        .setStarshipQuadrant(new Coord (0, 0))
-        .setStarshipSector(new Coord (0, 0));
+        .setStarbaseLocation(new Coord(1, 1))
+        .setStarshipQuadrant(new Coord(0, 0))
+        .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -131,9 +131,9 @@ public class MaintResultTests
     {
         var rf = new RandomFactoryBuilder()
         .setStarBaseChance(100)
-        .setStarbaseLocation(new Coord (1, 1))
-        .setStarshipQuadrant(new Coord (0, 0))
-        .setStarshipSector(new Coord (0, 0));
+        .setStarbaseLocation(new Coord(1, 1))
+        .setStarshipQuadrant(new Coord(0, 0))
+        .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -154,9 +154,9 @@ public class MaintResultTests
         int damageAmount = -3;
         var rf = new RandomFactoryBuilder()
         .setStarBaseChance(100)
-        .setStarbaseLocation(new Coord (1,1))
-        .setStarshipQuadrant(new Coord (0, 0))
-        .setStarshipSector(new Coord (0, 0));
+        .setStarbaseLocation(new Coord(1, 1))
+        .setStarshipQuadrant(new Coord(0, 0))
+        .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -210,9 +210,9 @@ public class MaintResultTests
         int routineMissionTimeChange = 1;
         var rf = new RandomFactoryBuilder()
           .setStarBaseChance(100)
-          .setStarbaseLocation(new Coord(1,1))
-          .setStarshipQuadrant(new Coord (0, 0))
-          .setStarshipSector(new Coord (0, 0) );
+          .setStarbaseLocation(new Coord(1, 1))
+          .setStarshipQuadrant(new Coord(0, 0))
+          .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
 
@@ -234,15 +234,15 @@ public class MaintResultTests
     public void verify_EnemiesFired()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord (1, 1))
-           .addEnemyLocation(new Coord (6, 6))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 1))
+           .addEnemyLocation(new Coord(6, 6))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarBaseChance(100)
            .setEnemyMoveChance(0)
            .setStarQuantity(0)
-           .setStarbaseLocation(new Coord (1, 5))
-           .setStarshipQuadrant(new Coord (0, 0))
+           .setStarbaseLocation(new Coord(1, 5))
+           .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
@@ -259,16 +259,16 @@ public class MaintResultTests
     {
         int damagedDeviceAmount = -2;
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord(6,1))
-           .addEnemyLocation(new Coord (4, 4))
+           .setStarbaseLocation(new(5, 5))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarBaseChance(0)
            .setEnemyMoveChance(0)
            .setDamagedDevice(3)
            .setDamagedDeviceChance(100)
            .setDamagedDeviceAmount(damagedDeviceAmount)
-           .setStarbaseLocation(new Coord (1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -293,13 +293,13 @@ public class MaintResultTests
     public void verify_EnemiesFiredWhileDocked()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord(6,1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarBaseChance(100)
            .setEnemyMoveChance(0)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -322,12 +322,12 @@ public class MaintResultTests
     public void verify_GameStatus_OutofTime()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarBaseChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -344,13 +344,13 @@ public class MaintResultTests
     public void verify_GameStatus_StarshipIsDestroyed()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setEnemyMoveChance(0)
            .setStarBaseChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -367,12 +367,12 @@ public class MaintResultTests
     public void verify_GameStatus_NoEnergyNoShields()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord (1, 0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .setStarbaseLocation(new(5, 5))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyMoveChance(0)
            .setEnemyChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -390,11 +390,11 @@ public class MaintResultTests
     public void verify_GameStatus_NoEnergyShieldsAvailNotDamaged()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord(1,0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -412,11 +412,11 @@ public class MaintResultTests
     public void verify_GameStatus_NoEnergyShieldsAvailDamaged()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord (1, 0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -436,7 +436,7 @@ public class MaintResultTests
     {
         var rf = new RandomFactoryBuilder()
            .setEnemyChance(0)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -453,13 +453,13 @@ public class MaintResultTests
     public void verify_EnemiesFiredSwitchFalse_NoEnemiesFire()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord (1, 0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarBaseChance(100)
            .setEnemyMoveChance(0)
-           .setStarbaseLocation(new Coord (1, 1))
+           .setStarbaseLocation(new Coord(1, 1))
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
 
@@ -476,14 +476,14 @@ public class MaintResultTests
     [Fact]
     public void verify_EnemiesMoveDuringMaint()
     {
-        var origEnemyCoord = new Coord (1, 0);
-        var newEnemyCoord = new Coord (4, 4);
+        var origEnemyCoord = new Coord(1, 0);
+        var newEnemyCoord = new Coord(4, 4);
         var rf = new RandomFactoryBuilder()
                .addEnemyLocation(origEnemyCoord)
                .addEnemyLocation(newEnemyCoord)
                .setEnemyChance(Global.EnemyZeroOne + 1)
                .setEnemyMoveChance(100)
-               .setStarbaseLocation(new Coord (1, 1))
+               .setStarbaseLocation(new Coord(1, 1))
                .setStarshipQuadrant(new Coord(0, 0))
                .setStarshipSector(new Coord(0, 0));
 

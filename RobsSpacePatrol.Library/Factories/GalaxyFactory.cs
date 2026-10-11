@@ -9,6 +9,7 @@ using RobsSpacePatrol.Library.Factories.Interfaces;
 using RobsSpacePatrol.Library.Models;
 
 namespace RobsSpacePatrol.Library.Factories;
+
 public class GalaxyFactory : IGalaxyFactory
 {
     public Galaxy createGalaxy(IRandomFactory randomFactory, ICurrentQuadrantFactory currentQuadrantFactory, IQuadrantFactory quadrantFactory)
@@ -18,10 +19,16 @@ public class GalaxyFactory : IGalaxyFactory
             for (int yCount = 0; yCount < Global.MaxQuadrantsXY; yCount++)
                 quadrants.Add(quadrantFactory.createQuadrant(new Coord(xCount, yCount), randomFactory));
 
+        if (!quadrants.Any(z => z.HasStarBase))
+        {
+            quadrants[0].HasStarBase = true;
+        }
+
+
         Coord StarshipQuadrantCoord = randomFactory.GetRandomCoord(eRandomCoordType.StarshipQuadrant) ?? throw new ArgumentNullException("Starship Quadrant RandomCoord returned null");
         Coord StarshipSectorCoord = randomFactory.GetRandomCoord(eRandomCoordType.StarshipSector) ?? throw new ArgumentNullException("Starship Sector RandomCoord returned null");
 
-        Quadrant currentStarshipQuadrant = quadrants.First(z =>z.Coord == StarshipQuadrantCoord);
+        Quadrant currentStarshipQuadrant = quadrants.First(z => z.Coord == StarshipQuadrantCoord);
 
         var currentQuadrant = currentQuadrantFactory.createCurrentQuadrant(currentStarshipQuadrant, randomFactory, StarshipSectorCoord);
 

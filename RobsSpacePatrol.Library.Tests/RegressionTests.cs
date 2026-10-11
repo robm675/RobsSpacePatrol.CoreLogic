@@ -84,6 +84,7 @@ public class RegressionTests
     public void RoutineMaintenance_CrossingDeadline_ReportsRanOutOfTimeImmediately()
     {
         var game = GameBuilder.getGame(out var galaxy, new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setEnemyChance(0)
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0)));
@@ -141,6 +142,7 @@ public class RegressionTests
     public void RoutineMaintenance_AllDevicesAlreadyDamaged_DoesNotOverwriteDamage()
     {
         var randomFactory = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .addEnemyLocation(new Coord(1, 0))
             .setEnemyChance(Global.EnemyZeroOne + 1)
             .setEnemyFiredAmount(10)
@@ -214,6 +216,7 @@ public class RegressionTests
     public void LAS_DestroyingEnemy_KeepsQuadrantCountConsistent()
     {
         var randomFactory = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .addEnemyLocation(new Coord(1, 0))
             .setEnemyChance(Global.EnemyZeroOne + 1)
             .setEnemyShieldLevel(0)
@@ -235,6 +238,7 @@ public class RegressionTests
     public void TOR_DestroyingEnemy_KeepsQuadrantCountConsistent()
     {
         var randomFactory = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .addEnemyLocation(new Coord(1, 0))
             .setEnemyChance(Global.EnemyZeroOne + 1)
             .setStarshipQuadrant(new Coord(0, 0))
@@ -257,6 +261,7 @@ public class RegressionTests
         params Coord[] enemyLocations)
     {
         var builder = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setEnemyChance(enemyCountChance)
             .setEnemyFiredAmount(enemyHitAmount)
             .setEnemyMoveChance(0)

@@ -33,9 +33,10 @@ public class LASTests
     public void test_LAS_NoEnergy()
     {
         var rf = new RandomFactoryBuilder()
-           .addEnemyLocation(new Coord (1, 0))
-           .addEnemyLocation(new Coord (6, 1))
-           .addEnemyLocation(new Coord (4, 4))
+           .setStarbaseLocation(new(5, 5))
+           .addEnemyLocation(new Coord(1, 0))
+           .addEnemyLocation(new Coord(6, 1))
+           .addEnemyLocation(new Coord(4, 4))
            .setEnemyChance(100)
            .setStarshipQuadrant(new Coord(0, 0))
            .setStarshipSector(new Coord(0, 0));
@@ -55,6 +56,7 @@ public class LASTests
     public void test_LAS_verifiedContents_NoEnemies()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .setStarshipQuadrant(new Coord(0, 0))
             .setStarshipSector(new Coord(0, 0));
 
@@ -72,6 +74,7 @@ public class LASTests
     public void test_LAS_verifiedContents_HIT_Enemy()
     {
         var rf = new RandomFactoryBuilder()
+            .setStarbaseLocation(new(5, 5))
             .addEnemyLocation(new Coord(1, 0))
             .addEnemyLocation(new Coord(6, 1))
             .addEnemyLocation(new Coord(4, 4))
@@ -119,9 +122,10 @@ public class LASTests
     public void test_LAS_verifiedContents_MISS()
     {
         var rf = new RandomFactoryBuilder()
-            .addEnemyLocation(new Coord(1,0))
-            .addEnemyLocation(new Coord (6, 1))
-            .addEnemyLocation(new Coord (4, 4))
+            .addEnemyLocation(new Coord(1, 0))
+            .addEnemyLocation(new Coord(6, 1))
+            .addEnemyLocation(new Coord(4, 4))
+            .setStarbaseLocation(new(5, 5))
             .setEnemyChance(100)
             .setLaserMissChance(100)
             .setStarshipQuadrant(new Coord(0, 0))

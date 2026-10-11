@@ -56,12 +56,13 @@ namespace RobsSpacePatrol.CoreLogic.Tests
         public void test_COM_NAV_verifiedContents_X()
         {
             var rf = new RandomFactoryBuilder()
-                .setStarshipQuadrant(new Coord(0,0))
+                .setStarbaseLocation(new(5, 5))
+                .setStarshipQuadrant(new Coord(0, 0))
                 .setStarshipSector(new Coord(0, 0));
 
             var galaxy = new GalaxyFactory().createGalaxy(rf.GetFactories(), new CurrentQuadrantFactory(), new QuadrantFactory());
-            var destQuadrant = new Coord (1, 0);
-            var destSector = new Coord (0, 0);
+            var destQuadrant = new Coord(1, 0);
+            var destSector = new Coord(0, 0);
 
             var game = new Game(galaxy, rf.GetFactories(), new CurrentQuadrantFactory());
             var result = game.COM_NAV(destQuadrant.toDTO, destSector.toDTO).getResults<COM_NAV>();
@@ -74,12 +75,13 @@ namespace RobsSpacePatrol.CoreLogic.Tests
         public void test_COM_NAV_verifiedContents_Y()
         {
             var rf = new RandomFactoryBuilder()
+                .setStarbaseLocation(new(5, 5))
                 .setStarshipQuadrant(new Coord(0, 0))
                 .setStarshipSector(new Coord(0, 0));
 
             var galaxy = new GalaxyFactory().createGalaxy(rf.GetFactories(), new CurrentQuadrantFactory(), new QuadrantFactory());
-            var destQuadrant = new Coord (0, 1);
-            var destSector = new Coord (0, 0);
+            var destQuadrant = new Coord(0, 1);
+            var destSector = new Coord(0, 0);
 
             var game = new Game(galaxy, rf.GetFactories(), new CurrentQuadrantFactory());
             var result = game.COM_NAV(destQuadrant.toDTO, destSector.toDTO).getResults<COM_NAV>();

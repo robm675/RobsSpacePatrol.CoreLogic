@@ -123,6 +123,47 @@ function Set-PackageReferenceVersion {
     [System.IO.File]::WriteAllText($Path, $updated, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Remove-CachedPackageVersion {
+    param(
+        [Parameter(Mandatory)][string]$PackageId,
+        [Parameter(Mandatory)][string]$Version
+    )
+
+    $output = & dotnet nuget locals global-packages --list
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not determine the NuGet global-packages directory."
+    }
+
+    $prefix = 'global-packages:'
+    $locationLine = $output | Where-Object { $_.TrimStart().StartsWith($prefix) } | Select-Object -First 1
+    if (-not $locationLine) {
+        throw "The NuGet global-packages directory was not reported by dotnet."
+    }
+
+    $globalPackagesPath = $locationLine.Substring($locationLine.IndexOf($prefix) + $prefix.Length).Trim()
+    $resolvedGlobalPackagesPath = [System.IO.Path]::GetFullPath($globalPackagesPath)
+    $cachedPackagePath = [System.IO.Path]::GetFullPath(
+        (Join-Path $resolvedGlobalPackagesPath (Join-Path $PackageId.ToLowerInvariant() $Version))
+    )
+
+    $globalPackagesPrefix = $resolvedGlobalPackagesPath.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+
+    if (-not $cachedPackagePath.StartsWith(
+        $globalPackagesPrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "Refusing to remove a package cache path outside the NuGet global-packages directory: $cachedPackagePath"
+    }
+
+    if (Test-Path -LiteralPath $cachedPackagePath) {
+        Write-Host "Removing cached $PackageId $Version from $cachedPackagePath" -ForegroundColor Yellow
+        Remove-Item -LiteralPath $cachedPackagePath -Recurse -Force
+    }
+}
+
 Assert-PathExists $coreSolution
 Assert-PathExists $csharpSolution
 Assert-PathExists $apiSolution
@@ -232,6 +273,19 @@ try {
         }
     }
 
+    # NuGet treats package versions as immutable. A failed earlier run may have
+    # cached this same version with different dependency metadata, so remove
+    # only the versions created by this run before restoring the consumers.
+    Remove-CachedPackageVersion `
+        -PackageId 'RobsSpacePatrol.Library' `
+        -Version $LibraryVersion
+
+    if ($IncludeDto) {
+        Remove-CachedPackageVersion `
+            -PackageId 'RobsSpacePatrol.DTO' `
+            -Version $DtoVersion
+    }
+
     Invoke-DotNet @('restore', $csharpSolution, '--force-evaluate')
     Invoke-DotNet @('test', $csharpSolution, '--no-restore')
 
@@ -269,8 +323,18 @@ catch {
         }
     }
 
+    Remove-CachedPackageVersion `
+        -PackageId 'RobsSpacePatrol.Library' `
+        -Version $LibraryVersion
+
+    if ($IncludeDto) {
+        Remove-CachedPackageVersion `
+            -PackageId 'RobsSpacePatrol.DTO' `
+            -Version $DtoVersion
+    }
+
     throw
 }
-
-Read-Host "Press Enter to close"
-exit 0
+finally {
+    Read-Host "Press Enter to finish"
+}

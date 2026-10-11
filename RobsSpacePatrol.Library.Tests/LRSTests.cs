@@ -58,7 +58,7 @@ public class LRSTests
     public void test_LRS_MarksHasExplored()
     {
         var rf = new RandomFactoryBuilder()
-            .setStarshipSector(new Coord(0,0))
+            .setStarshipSector(new Coord(0, 0))
             .setStarshipQuadrant(new Coord(3, 3));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
@@ -74,7 +74,8 @@ public class LRSTests
     public void test_LRS_CornerLRSCorrectCountOfQuadrants()
     {
         var rf = new RandomFactoryBuilder()
-            .setStarshipSector(new Coord(0,0))
+            .setStarbaseLocation(new(5, 5))
+            .setStarshipSector(new Coord(0, 0))
             .setStarshipQuadrant(new Coord(0, 0));
 
         var game = GameBuilder.getGame(out var galaxy, rf);
