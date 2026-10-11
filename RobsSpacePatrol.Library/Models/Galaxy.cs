@@ -23,15 +23,25 @@ public interface IGalaxy
 
 
     eNavMessage CheckRouteAndMoveStarship(IRandomFactory randomFactory, ICurrentQuadrantFactory currentQuadrantFactory, double DIR, double DIST, int EstimateAmountOfEnergyForTrip, Coord StartSectorCoord, Coord FinalQuadrant, Coord FinalSector);
+
     bool Equals(Galaxy? other);
+
     bool Equals(object? obj);
+
     int getEnemiesRemaining();
+
     string getGalaxyFormatted();
+
     int GetHashCode();
+
     Quadrant? GetQuadrantByCoord(Coord coord);
+
     QuadrantDTO? GetQuadrantByCoordDTO(CoordDTO coord);
+
     void MoveStarshipQuadrant(ICurrentQuadrantFactory currentQuadrantFactory, IRandomFactory randomFactory, Quadrant newQuadrant, Coord sectorCoord);
+
     string ToString();
+
     void debugSet(bool skipEnemyMove = false, bool forceEnemyMove = false, bool stopEnemyFire = false);
 
     List<QuadrantDTO> toQuadrantDTO { get; }
@@ -102,9 +112,11 @@ public record Galaxy : IGalaxy
                 case 0:
                     outstr += "^";
                     break;
+
                 case 4:
                     outstr += "Y";
                     break;
+
                 default:
                     outstr += "|";
                     break;
@@ -158,35 +170,21 @@ public record Galaxy : IGalaxy
         }
         else
         {
-            Coord NextToLastCoord;
-            try
-            {
-                NextToLastCoord = CFO.TrackingCoords!.Last();
+            if (CFO.FinalCoord == null)
+                return eNavMessage.InternalError;
 
-            }
-            catch (Exception)
-            {
-                Console.WriteLine($"DIR={DIR}");
-                Console.WriteLine($"StartSectorCoord={StartSectorCoord}");
-                Console.WriteLine($"CFO.ObjectHit={CFO.ObjectHit}");
+            var stoppingCoord = CFO.FinalCoord;
 
-                Console.WriteLine(CurrentQuadrant.getFormatted());
-
-                throw;
-            }
-            //get next to last of the tracking coords because we don't want the actual sector the object is in, but the one before
-
-
-
-            //change the estimate because the trip was cut short
             EstimateAmountOfEnergyForTrip = CalculationUtilitiesV2.Distance2Energy(
                             CurrentQuadrant.Coord,
                             curSector.Coord,
                             CurrentQuadrant.Coord,
-                            NextToLastCoord);
+                            stoppingCoord);
 
-
-            CurrentQuadrant.moveObjectInsideQuadrant(curSector.Coord, NextToLastCoord);
+            if (stoppingCoord != curSector.Coord)
+            {
+                CurrentQuadrant.moveObjectInsideQuadrant(curSector.Coord, stoppingCoord);
+            }
 
             Starship.EnergyLevel -= EstimateAmountOfEnergyForTrip;
             return eNavMessage.BadInput_ObjectHit;

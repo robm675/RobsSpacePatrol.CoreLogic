@@ -15,17 +15,34 @@ $ErrorActionPreference = 'Stop'
 $coreRoot = $PSScriptRoot
 $repositoriesRoot = Split-Path -Parent $coreRoot
 $csharpRoot = Join-Path $repositoriesRoot 'RobsSpacePatrol.CSharp'
+$apiRoot = Join-Path $repositoriesRoot 'RobsSpacePatrol.API'
 $coreSolution = Join-Path $coreRoot 'RobsSpacePatrol.CoreLogic.sln'
 $csharpSolution = Join-Path $csharpRoot 'RobsSpacePatrol.CSharp.sln'
+$apiSolution = Join-Path $apiRoot 'RobsSpacePatrol.API.sln'
 $libraryProject = Join-Path $coreRoot 'RobsSpacePatrol.Library\RobsSpacePatrol.Library.csproj'
 $dtoProject = Join-Path $coreRoot 'RobsSpacePatrol.DTO\RobsSpacePatrol.DTO.csproj'
-$localPackages = Join-Path $csharpRoot 'local-packages'
+$csharpLocalPackages = Join-Path $csharpRoot 'local-packages'
+$apiLocalPackages = Join-Path $apiRoot 'local-packages'
 
-$consumerProjects = @(
+$csharpLibraryConsumers = @(
     (Join-Path $csharpRoot 'RobsSpacePatrol.CLI\RobsSpacePatrol.CLI.csproj'),
     (Join-Path $csharpRoot 'RobsSpacePatrol.CLI.Library\RobsSpacePatrol.CLI.Library.csproj'),
     (Join-Path $csharpRoot 'RobsSpacePatrol.CLI.Library.Tests\RobsSpacePatrol.CLI.Library.Tests.csproj')
 )
+
+$apiLibraryConsumers = @(
+    (Join-Path $apiRoot 'RobsSpacePatrol.API\RobsSpacePatrol.API.csproj'),
+    (Join-Path $apiRoot 'RobsSpacePatrol.API.Tests\RobsSpacePatrol.API.Tests.csproj')
+)
+
+$apiDtoConsumers = @(
+    (Join-Path $apiRoot 'RobsSpacePatrol.API\RobsSpacePatrol.API.csproj'),
+    (Join-Path $apiRoot 'RobsSpacePatrol.API.Tests\RobsSpacePatrol.API.Tests.csproj'),
+    (Join-Path $apiRoot 'RobsSpacePatrol.CLI.API.Library\RobsSpacePatrol.CLI.API.Library.csproj'),
+    (Join-Path $apiRoot 'RobsSpacePatrol.CLI.API\RobsSpacePatrol.CLI.API.csproj')
+)
+
+$apiTestProject = Join-Path $apiRoot 'RobsSpacePatrol.API.Tests\RobsSpacePatrol.API.Tests.csproj'
 
 function Assert-PathExists {
     param([Parameter(Mandatory)][string]$Path)
@@ -108,10 +125,15 @@ function Set-PackageReferenceVersion {
 
 Assert-PathExists $coreSolution
 Assert-PathExists $csharpSolution
+Assert-PathExists $apiSolution
 Assert-PathExists $libraryProject
 Assert-PathExists $dtoProject
-Assert-PathExists $localPackages
-$consumerProjects | ForEach-Object { Assert-PathExists $_ }
+Assert-PathExists $csharpLocalPackages
+Assert-PathExists $apiLocalPackages
+Assert-PathExists $apiTestProject
+$csharpLibraryConsumers | ForEach-Object { Assert-PathExists $_ }
+$apiLibraryConsumers | ForEach-Object { Assert-PathExists $_ }
+$apiDtoConsumers | ForEach-Object { Assert-PathExists $_ }
 
 if ($DtoVersion -and -not $IncludeDto) {
     throw '-DtoVersion can only be used together with -IncludeDto.'
@@ -127,17 +149,27 @@ if ($IncludeDto -and -not $DtoVersion) {
     $DtoVersion = Get-NextPatchVersion $currentDtoVersion
 }
 
-$libraryPackage = Join-Path $localPackages "RobsSpacePatrol.Library.$LibraryVersion.nupkg"
-$dtoPackage = if ($IncludeDto) {
-    Join-Path $localPackages "RobsSpacePatrol.DTO.$DtoVersion.nupkg"
+$csharpLibraryPackage = Join-Path $csharpLocalPackages "RobsSpacePatrol.Library.$LibraryVersion.nupkg"
+$apiLibraryPackage = Join-Path $apiLocalPackages "RobsSpacePatrol.Library.$LibraryVersion.nupkg"
+$csharpDtoPackage = if ($IncludeDto) {
+    Join-Path $csharpLocalPackages "RobsSpacePatrol.DTO.$DtoVersion.nupkg"
+}
+$apiDtoPackage = if ($IncludeDto) {
+    Join-Path $apiLocalPackages "RobsSpacePatrol.DTO.$DtoVersion.nupkg"
 }
 
-if (Test-Path -LiteralPath $libraryPackage) {
-    throw "The target Library package already exists: $libraryPackage`nChoose another version with -LibraryVersion."
+foreach ($package in @($csharpLibraryPackage, $apiLibraryPackage)) {
+    if (Test-Path -LiteralPath $package) {
+        throw "The target Library package already exists: $package`nChoose another version with -LibraryVersion."
+    }
 }
 
-if ($IncludeDto -and (Test-Path -LiteralPath $dtoPackage)) {
-    throw "The target DTO package already exists: $dtoPackage`nChoose another version with -DtoVersion."
+if ($IncludeDto) {
+    foreach ($package in @($csharpDtoPackage, $apiDtoPackage)) {
+        if (Test-Path -LiteralPath $package) {
+            throw "The target DTO package already exists: $package`nChoose another version with -DtoVersion."
+        }
+    }
 }
 
 Write-Host "Updating RobsSpacePatrol.Library $currentLibraryVersion -> $LibraryVersion" -ForegroundColor Green
@@ -148,10 +180,11 @@ if ($IncludeDto) {
 # Verify CoreLogic before changing any package or consumer project files.
 Invoke-DotNet @('test', $coreSolution)
 
-$filesToRestore = @($libraryProject) + $consumerProjects
+$filesToRestore = @($libraryProject) + $csharpLibraryConsumers + $apiLibraryConsumers
 if ($IncludeDto) {
-    $filesToRestore += $dtoProject
+    $filesToRestore += @($dtoProject) + $apiDtoConsumers
 }
+$filesToRestore = $filesToRestore | Select-Object -Unique
 
 $originalContents = @{}
 foreach ($file in $filesToRestore) {
@@ -166,34 +199,58 @@ try {
         Invoke-DotNet @(
             'pack', $dtoProject,
             '--configuration', 'Release',
-            '--output', $localPackages
+            '--output', $csharpLocalPackages
         )
-        $createdPackages.Add($dtoPackage)
+        $createdPackages.Add($csharpDtoPackage)
+        Copy-Item -LiteralPath $csharpDtoPackage -Destination $apiDtoPackage
+        $createdPackages.Add($apiDtoPackage)
     }
 
     Set-ProjectVersion -Path $libraryProject -Version $LibraryVersion
     Invoke-DotNet @(
         'pack', $libraryProject,
         '--configuration', 'Release',
-        '--output', $localPackages
+        '--output', $csharpLocalPackages
     )
-    $createdPackages.Add($libraryPackage)
+    $createdPackages.Add($csharpLibraryPackage)
+    Copy-Item -LiteralPath $csharpLibraryPackage -Destination $apiLibraryPackage
+    $createdPackages.Add($apiLibraryPackage)
 
-    foreach ($project in $consumerProjects) {
+    foreach ($project in $csharpLibraryConsumers + $apiLibraryConsumers) {
         Set-PackageReferenceVersion `
             -Path $project `
             -PackageId 'RobsSpacePatrol.Library' `
             -Version $LibraryVersion
     }
 
+    if ($IncludeDto) {
+        foreach ($project in $apiDtoConsumers) {
+            Set-PackageReferenceVersion `
+                -Path $project `
+                -PackageId 'RobsSpacePatrol.DTO' `
+                -Version $DtoVersion
+        }
+    }
+
     Invoke-DotNet @('restore', $csharpSolution, '--force-evaluate')
     Invoke-DotNet @('test', $csharpSolution, '--no-restore')
 
+    Invoke-DotNet @('restore', $apiSolution, '--force-evaluate')
+    Invoke-DotNet @('build', $apiSolution, '--configuration', 'Release', '--no-restore')
+    Invoke-DotNet @(
+        'test', $apiTestProject,
+        '--configuration', 'Release',
+        '--no-build',
+        '--no-restore'
+    )
+
     Write-Host "`nCoreLogic package update completed successfully." -ForegroundColor Green
     Write-Host "CSharp now uses RobsSpacePatrol.Library $LibraryVersion." -ForegroundColor Green
+    Write-Host "API now uses RobsSpacePatrol.Library $LibraryVersion." -ForegroundColor Green
     if ($IncludeDto) {
-        Write-Host "The Library package uses RobsSpacePatrol.DTO $DtoVersion." -ForegroundColor Green
+        Write-Host "The Library package and API projects use RobsSpacePatrol.DTO $DtoVersion." -ForegroundColor Green
     }
+    Write-Host 'The server-dependent CLI API integration tests were not run.' -ForegroundColor Yellow
 }
 catch {
     Write-Warning 'The update failed. Restoring the original project files and removing packages created by this run.'
