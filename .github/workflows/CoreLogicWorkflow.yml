@@ -20,6 +20,43 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+
+    - name: Assign CI package versions
+      shell: pwsh
+      run: |
+        $projects = @(
+          'RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj',
+          'RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj'
+        )
+
+        foreach ($project in $projects) {
+          $content = [System.IO.File]::ReadAllText($project)
+
+          $match = [regex]::Match(
+            $content,
+            '<Version>(\d+\.\d+\.\d+)</Version>'
+          )
+
+          if (-not $match.Success) {
+            throw "Cannot find version in $project"
+          }
+
+          $baseVersion = $match.Groups[1].Value
+          $ciVersion = "$baseVersion-ci.${{ github.run_id }}.${{ github.run_attempt }}"
+
+          $updated = [regex]::Replace(
+            $content,
+            '<Version>\d+\.\d+\.\d+</Version>',
+            "<Version>$ciVersion</Version>",
+            1
+          )
+
+          [System.IO.File]::WriteAllText($project, $updated)
+
+          Write-Host "$project => $ciVersion"
+        }
+
+
         
     - name: Restore dependencies
       run: dotnet restore RobsSpacePatrol.CoreLogic.sln       
@@ -28,32 +65,29 @@ jobs:
       run: dotnet build RobsSpacePatrol.CoreLogic.sln --configuration Release --no-restore      
 
     # Independent tests
-    - name: Test API (independent)
+    - name: Test CoreLogic
       run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
     
     
+
+
     - name: Create CoreLogic NuGet packages
       shell: pwsh
       run: |
-        $libraryVersion = "1.0.12-ci.${{ github.run_id }}.${{ github.run_attempt }}"
-        $dtoVersion = "1.0.5-ci.${{ github.run_id }}.${{ github.run_attempt }}"
-    
         dotnet pack RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj `
           --configuration Release `
           --no-build `
-          -p:PackageVersion=$libraryVersion `
           --output "${{ runner.temp }}/nuget-packages"
-    
+
         if ($LASTEXITCODE -ne 0) {
           throw "Failed to package RobsSpacePatrol.Library"
         }
-    
+
         dotnet pack RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj `
           --configuration Release `
           --no-build `
-          -p:PackageVersion=$dtoVersion `
           --output "${{ runner.temp }}/nuget-packages"
-    
+
         if ($LASTEXITCODE -ne 0) {
           throw "Failed to package RobsSpacePatrol.DTO"
         }
