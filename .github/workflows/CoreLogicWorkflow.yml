@@ -235,6 +235,15 @@ jobs:
           & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
             -Workspace $env:GITHUB_WORKSPACE `
             -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
+      
+      - name: Check GitHub CLI authentication
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+        run: |
+          gh auth status
+          gh api repos/robm675/RobsSpacePatrol.CSharp --jq '.full_name'
+
 
       - name: Create update branches and pull requests
         shell: pwsh
