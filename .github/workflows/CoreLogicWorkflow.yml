@@ -29,4 +29,4 @@ jobs:
 
     # Independent tests
     - name: Test API (independent)
-      run: dotnet run --project RobsSpacePatrol.CoreLogic.Tests --configuration Release --no-build
+      run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
