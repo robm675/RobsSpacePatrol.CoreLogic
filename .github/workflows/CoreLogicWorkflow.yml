@@ -31,12 +31,17 @@ jobs:
     - name: Test API (independent)
       run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
     
+    
     - name: Create CoreLogic NuGet packages
       shell: pwsh
       run: |
+        $libraryVersion = "1.0.12-ci.${{ github.run_id }}.${{ github.run_attempt }}"
+        $dtoVersion = "1.0.5-ci.${{ github.run_id }}.${{ github.run_attempt }}"
+    
         dotnet pack RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj `
           --configuration Release `
           --no-build `
+          -p:PackageVersion=$libraryVersion `
           --output "${{ runner.temp }}/nuget-packages"
     
         if ($LASTEXITCODE -ne 0) {
@@ -46,11 +51,14 @@ jobs:
         dotnet pack RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj `
           --configuration Release `
           --no-build `
+          -p:PackageVersion=$dtoVersion `
           --output "${{ runner.temp }}/nuget-packages"
     
         if ($LASTEXITCODE -ne 0) {
           throw "Failed to package RobsSpacePatrol.DTO"
         }
+
+
     
     - name: Upload NuGet packages
       uses: actions/upload-artifact@v4
