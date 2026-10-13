@@ -1,0 +1,94 @@
+# Add this under `jobs:` in RobsSpacePatrol.CoreLogic/.github/workflows/corelogic-ci.yml.
+# Assumes your existing CoreLogic build/test/pack/upload job ID is `build`.
+# If not, change `needs: build` to its actual job ID.
+  validate-consumers:
+    name: Validate CSharp and API against new packages
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      NUGET_PACKAGES: ${{ runner.temp }}/corelogic-validation-nuget-cache
+    steps:
+      - name: Checkout CoreLogic scripts
+        uses: actions/checkout@v4
+        with:
+          path: RobsSpacePatrol.CoreLogic
+
+      # For private consuming repositories, create a fine-grained GitHub PAT with
+      # read-only Contents access to CSharp and API, stored as CROSS_REPO_READ_TOKEN
+      # in CoreLogic's Actions repository secrets. Public repos can omit token: lines.
+      - name: Checkout CSharp
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.CSharp
+          path: RobsSpacePatrol.CSharp
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
+          persist-credentials: false
+
+      - name: Checkout API
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.API
+          path: RobsSpacePatrol.API
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
+          persist-credentials: false
+
+      - name: Download CoreLogic package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: corelogic-nuget-packages
+          path: ${{ runner.temp }}/corelogic-packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Stage package updates in temporary checkouts
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
+            -Workspace $env:GITHUB_WORKSPACE `
+            -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
+
+      - name: Verify updated references and package files
+        shell: pwsh
+        run: |
+          foreach ($repo in @('RobsSpacePatrol.CSharp', 'RobsSpacePatrol.API')) {
+            Write-Host "Changes in $repo"
+            git -C $repo status --short
+            git -C $repo diff -- '*.csproj'
+          }
+
+      - name: Restore and build CSharp
+        shell: pwsh
+        run: |
+          dotnet restore RobsSpacePatrol.CSharp/RobsSpacePatrol.CSharp.sln --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp restore failed' }
+          dotnet build RobsSpacePatrol.CSharp/RobsSpacePatrol.CSharp.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp build failed' }
+
+      - name: Run CSharp tests
+        shell: pwsh
+        run: |
+          dotnet run --project RobsSpacePatrol.CSharp/RobsSpacePatrol.CLI.Library.Tests --configuration Release --no-build
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp tests failed' }
+
+      - name: Restore and build API
+        shell: pwsh
+        run: |
+          dotnet restore RobsSpacePatrol.API/RobsSpacePatrol.API.sln --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'API restore failed' }
+          dotnet build RobsSpacePatrol.API/RobsSpacePatrol.API.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'API build failed' }
+
+      - name: Run API independent tests
+        shell: pwsh
+        run: |
+          dotnet run --project RobsSpacePatrol.API/RobsSpacePatrol.API.Tests --configuration Release --no-build -- -trait- "Category=Database"
+          if ($LASTEXITCODE -ne 0) { throw 'API independent tests failed' }
+
+      # Full API integration validation and approved propagation are subsequent stages.
+      # This job does not push, merge, or modify the remote consuming repositories.
