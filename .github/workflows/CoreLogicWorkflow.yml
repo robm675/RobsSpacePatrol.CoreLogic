@@ -30,3 +30,32 @@ jobs:
     # Independent tests
     - name: Test API (independent)
       run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
+    
+    - name: Create CoreLogic NuGet packages
+      shell: pwsh
+      run: |
+        dotnet pack RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj `
+          --configuration Release `
+          --no-build `
+          --output "${{ runner.temp }}/nuget-packages"
+    
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to package RobsSpacePatrol.Library"
+        }
+    
+        dotnet pack RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj `
+          --configuration Release `
+          --no-build `
+          --output "${{ runner.temp }}/nuget-packages"
+    
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to package RobsSpacePatrol.DTO"
+        }
+    
+    - name: Upload NuGet packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: corelogic-nuget-packages
+        path: ${{ runner.temp }}/nuget-packages/*.nupkg
+        if-no-files-found: error
+        retention-days: 30
