@@ -1,0 +1,11 @@
+name: Actions Log Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Print diagnostic
+        run: echo "GitHub Actions step logging works"

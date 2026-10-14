@@ -1,0 +1,348 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: CoreLogic
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      package_changed: ${{ steps.changes.outputs.package_changed }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect package-related changes
+      id: changes
+      shell: pwsh
+      run: |
+        $before = '${{ github.event.before }}'
+        $after = '${{ github.sha }}'
+
+        # Default to updating packages unless we can establish
+        # that this was a workflow-only change.
+        $packageChanged = $true
+
+        if ('${{ github.event_name }}' -eq 'push' -and
+            $before -and
+            $before -notmatch '^0+$') {
+
+          $files = @(git diff --name-only $before $after)
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to determine changed files"
+          }
+
+          Write-Host "Changed files:"
+          $files | ForEach-Object { Write-Host "  $_" }
+
+          if ($files.Count -gt 0) {
+            $packageChanged = @(
+              $files | Where-Object {
+                $_ -notmatch '^\.github/workflows/'
+              }
+            ).Count -gt 0
+          }
+        }
+
+        $value = $packageChanged.ToString().ToLowerInvariant()
+        "package_changed=$value" >> $env:GITHUB_OUTPUT
+
+        Write-Host "Package-related changes: $value"
+
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Assign CI package versions
+      shell: pwsh
+      run: |
+        $projects = @(
+          'RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj',
+          'RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj'
+        )
+
+        foreach ($project in $projects) {
+          $content = [System.IO.File]::ReadAllText($project)
+
+          $match = [regex]::Match(
+            $content,
+            '<Version>(\d+\.\d+\.\d+)</Version>'
+          )
+
+          if (-not $match.Success) {
+            throw "Cannot find version in $project"
+          }
+
+          $baseVersion = $match.Groups[1].Value
+          $ciVersion = "$baseVersion-ci.${{ github.run_id }}.${{ github.run_attempt }}"
+
+          $updated = [regex]::Replace(
+            $content,
+            '<Version>\d+\.\d+\.\d+</Version>',
+            "<Version>$ciVersion</Version>",
+            1
+          )
+
+          [System.IO.File]::WriteAllText($project, $updated)
+
+          Write-Host "$project => $ciVersion"
+        }
+
+
+        
+    - name: Restore dependencies
+      run: dotnet restore RobsSpacePatrol.CoreLogic.sln       
+
+    - name: Build
+      run: dotnet build RobsSpacePatrol.CoreLogic.sln --configuration Release --no-restore      
+
+    # Independent tests
+    - name: Test CoreLogic
+      run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
+    
+    
+
+
+    - name: Create CoreLogic NuGet packages
+      shell: pwsh
+      run: |
+        dotnet pack RobsSpacePatrol.Library/RobsSpacePatrol.Library.csproj `
+          --configuration Release `
+          --no-build `
+          --output "${{ runner.temp }}/nuget-packages"
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to package RobsSpacePatrol.Library"
+        }
+
+        dotnet pack RobsSpacePatrol.DTO/RobsSpacePatrol.DTO.csproj `
+          --configuration Release `
+          --no-build `
+          --output "${{ runner.temp }}/nuget-packages"
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to package RobsSpacePatrol.DTO"
+        }
+
+
+    
+    - name: Upload NuGet packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: corelogic-nuget-packages
+        path: ${{ runner.temp }}/nuget-packages/*.nupkg
+        if-no-files-found: error
+        retention-days: 30
+
+
+
+  validate-consumers:
+    name: Validate CSharp and API against new packages
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/corelogic-validation-nuget-cache
+    steps:
+      - name: Checkout CoreLogic scripts
+        uses: actions/checkout@v4
+        with:
+          path: RobsSpacePatrol.CoreLogic
+
+      # For private consuming repositories, create a fine-grained GitHub PAT with
+      # read-only Contents access to CSharp and API, stored as CROSS_REPO_READ_TOKEN
+      # in CoreLogic's Actions repository secrets. Public repos can omit token: lines.
+      - name: Checkout CSharp
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.CSharp
+          path: RobsSpacePatrol.CSharp
+          persist-credentials: false
+
+      - name: Checkout API
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.API
+          path: RobsSpacePatrol.API
+          persist-credentials: false
+
+      - name: Download CoreLogic package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: corelogic-nuget-packages
+          path: ${{ runner.temp }}/corelogic-packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Stage package updates in temporary checkouts
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
+            -Workspace $env:GITHUB_WORKSPACE `
+            -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
+
+      - name: Verify updated references and package files
+        shell: pwsh
+        run: |
+          foreach ($repo in @('RobsSpacePatrol.CSharp', 'RobsSpacePatrol.API')) {
+            Write-Host "Changes in $repo"
+            git -C $repo status --short
+            git -C $repo diff -- '*.csproj'
+          }
+
+      - name: Restore and build CSharp
+        shell: pwsh
+        run: |
+          dotnet restore RobsSpacePatrol.CSharp/RobsSpacePatrol.CSharp.sln --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp restore failed' }
+          dotnet build RobsSpacePatrol.CSharp/RobsSpacePatrol.CSharp.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp build failed' }
+
+      - name: Run CSharp tests
+        shell: pwsh
+        run: |
+          dotnet run --project RobsSpacePatrol.CSharp/RobsSpacePatrol.CLI.Library.Tests --configuration Release --no-build
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp tests failed' }
+
+      - name: Restore and build API
+        shell: pwsh
+        run: |
+          dotnet restore RobsSpacePatrol.API/RobsSpacePatrol.API.sln --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'API restore failed' }
+          dotnet build RobsSpacePatrol.API/RobsSpacePatrol.API.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'API build failed' }
+
+      - name: Run API independent tests
+        shell: pwsh
+        run: |
+          dotnet run --project RobsSpacePatrol.API/RobsSpacePatrol.API.Tests --configuration Release --no-build -- -trait- "Category=Database"
+          if ($LASTEXITCODE -ne 0) { throw 'API independent tests failed' }
+
+      # Full API integration validation and approved propagation are subsequent stages.
+      # This job does not push, merge, or modify the remote consuming repositories.
+
+      
+  propose-updates:
+    name: Propose CSharp and API package updates
+    needs: [build, validate-consumers]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build.outputs.package_changed == 'true'
+
+      
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout CoreLogic scripts
+        uses: actions/checkout@v4
+        with:
+          path: RobsSpacePatrol.CoreLogic
+
+      - name: Checkout CSharp
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.CSharp
+          ref: main
+          path: RobsSpacePatrol.CSharp
+          token: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+
+      - name: Checkout API
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.API
+          ref: main
+          path: RobsSpacePatrol.API
+          token: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+
+      - name: Download CoreLogic NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: corelogic-nuget-packages
+          path: ${{ runner.temp }}/corelogic-packages
+
+      - name: Stage package updates
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
+            -Workspace $env:GITHUB_WORKSPACE `
+            -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
+      
+      - name: Check GitHub CLI authentication
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+        run: |
+          gh auth status
+          gh api repos/robm675/RobsSpacePatrol.CSharp --jq '.full_name'
+
+
+      - name: Create update branches and pull requests
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $branch = "corelogic-update-${{ github.run_id }}-${{ github.run_attempt }}"
+
+          foreach ($repo in @('RobsSpacePatrol.CSharp', 'RobsSpacePatrol.API')) {
+            $path = Join-Path $env:GITHUB_WORKSPACE $repo
+
+            Push-Location $path
+            try {
+              git config user.name "CoreLogic CI"
+              git config user.email "corelogic-ci@users.noreply.github.com"
+
+              git switch -c $branch
+              if ($LASTEXITCODE -ne 0) { throw "Branch creation failed: $repo" }
+
+              git add local-packages
+              git add -- '*.csproj'
+              if ($LASTEXITCODE -ne 0) { throw "Staging failed: $repo" }
+
+              $changed = @(git diff --cached --name-only)
+              if ($LASTEXITCODE -ne 0) { throw "Git diff failed: $repo" }
+
+              if ($changed.Count -eq 0) {
+                Write-Host "No changes needed in $repo"
+                continue
+              }
+
+              git commit -m "Update CoreLogic NuGet dependencies"
+              if ($LASTEXITCODE -ne 0) { throw "Commit failed: $repo" }
+
+              git push --set-upstream origin $branch
+              if ($LASTEXITCODE -ne 0) { throw "Push failed: $repo" }
+
+              gh pr create `
+                --repo "robm675/$repo" `
+                --base main `
+                --head $branch `
+                --title "Update CoreLogic NuGet dependencies" `
+                --body "Automated CoreLogic dependency update from run ${{ github.run_id }}. Review the consumer CI results before merging."
+
+              if ($LASTEXITCODE -ne 0) { throw "Pull request creation failed: $repo" }
+            }
+            finally {
+              Pop-Location
+            }
+          }
