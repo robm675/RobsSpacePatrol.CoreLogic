@@ -163,6 +163,45 @@ jobs:
         with:
           path: RobsSpacePatrol.CoreLogic
 
+
+
+      - name: Select consumer branches
+        id: consumer-branches
+        shell: pwsh
+        env:
+          CORELOGIC_BRANCH: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $branch = $env:CORELOGIC_BRANCH
+
+          foreach ($repo in @('RobsSpacePatrol.CSharp', 'RobsSpacePatrol.API')) {
+            $selectedBranch = 'main'
+
+            if ($branch -ne 'main') {
+              $url = "https://github.com/robm675/$repo.git"
+              $remoteRef = "refs/heads/$branch"
+
+              $matches = @(git ls-remote --heads $url $remoteRef)
+
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to check branches in $repo"
+              }
+
+              if ($matches.Count -gt 0) {
+                $selectedBranch = $branch
+              }
+            }
+
+            Write-Host "$repo => $selectedBranch"
+
+            if ($repo -eq 'RobsSpacePatrol.CSharp') {
+              "csharp_ref=$selectedBranch" >> $env:GITHUB_OUTPUT
+            }
+            else {
+              "api_ref=$selectedBranch" >> $env:GITHUB_OUTPUT
+            }
+          }
+
       # For private consuming repositories, create a fine-grained GitHub PAT with
       # read-only Contents access to CSharp and API, stored as CROSS_REPO_READ_TOKEN
       # in CoreLogic's Actions repository secrets. Public repos can omit token: lines.
@@ -170,6 +209,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: robm675/RobsSpacePatrol.CSharp
+          ref: ${{ steps.consumer-branches.outputs.csharp_ref }}
           path: RobsSpacePatrol.CSharp
           persist-credentials: false
 
@@ -177,6 +217,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: robm675/RobsSpacePatrol.API
+          ref: ${{ steps.consumer-branches.outputs.api_ref }}
           path: RobsSpacePatrol.API
           persist-credentials: false
 
