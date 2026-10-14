@@ -148,12 +148,10 @@ jobs:
         if-no-files-found: error
         retention-days: 30
 
-
-
   validate-consumers:
     name: Validate CSharp and API against new packages
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -239,7 +237,6 @@ jobs:
 
       # Full API integration validation and approved propagation are subsequent stages.
       # This job does not push, merge, or modify the remote consuming repositories.
-
       
   propose-updates:
     name: Propose CSharp and API package updates
