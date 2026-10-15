@@ -233,7 +233,7 @@ public class Game : IGame
         };
     }
 
-    public Result DAM()
+    public Result GetDamageReport()
     {
         if (Galaxy.Starship == null) return new Result();
         if (Galaxy.Starship.Devices == null) return new Result();

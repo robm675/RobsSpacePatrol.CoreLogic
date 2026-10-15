@@ -26,7 +26,7 @@ public interface IGame
 
     Result COM_TOR();
 
-    Result DAM();
+    Result GetDamageReport();
 
     Result LRS();
 

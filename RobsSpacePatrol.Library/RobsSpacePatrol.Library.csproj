@@ -8,8 +8,8 @@
     <Version>1.0.12</Version>
     <Authors>Rob</Authors>
     <Description>Core game logic for Rob's Space Patrol.</Description>
-    <AssemblyVersion>2026.10.9.2266</AssemblyVersion>
-    <FileVersion>2026.10.9.2266</FileVersion>
+    <AssemblyVersion>2026.10.15.2267</AssemblyVersion>
+    <FileVersion>2026.10.15.2267</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
