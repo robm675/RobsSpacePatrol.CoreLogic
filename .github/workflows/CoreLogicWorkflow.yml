@@ -270,10 +270,6 @@ jobs:
           dotnet build RobsSpacePatrol.API/RobsSpacePatrol.API.sln --configuration Release --no-restore
           if ($LASTEXITCODE -ne 0) { throw 'API build failed' }
 
-
-
-
-
       - name: Verify SQL Server LocalDB
         shell: pwsh
         run: |
@@ -301,8 +297,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "EF Core migrations failed"
           }
-
-
 
       - name: Start API
         id: api-server
@@ -344,7 +338,6 @@ jobs:
           if (-not $ready) {
             throw "API did not become available."
           }
-
 
       - name: Register CI test accounts
         shell: pwsh
@@ -453,6 +446,25 @@ jobs:
 
           Write-Host "CI administrator configured successfully."
 
+
+
+      - name: Test CLI API Library (database)
+        shell: pwsh
+        working-directory: RobsSpacePatrol.API
+        env:
+          ROBSSPACEPATROL_API_TEST_URL: http://127.0.0.1:5067
+          ROBSSPACEPATROL_API_TEST_USER: ci-user@example.com
+          ROBSSPACEPATROL_API_TEST_ADMIN: ci-admin@example.com
+          ROBSSPACEPATROL_API_TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
+        run: |
+          dotnet run --project RobsSpacePatrol.CLI.API.Library.Tests `
+            --configuration Release `
+            --no-build `
+            -- -trait "Category=Database"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "API database integration tests failed"
+          }
 
 
 
