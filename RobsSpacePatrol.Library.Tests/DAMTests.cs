@@ -12,7 +12,7 @@ public class DAMTests
     {
         var game = GameBuilder.getGame();
 
-        Assert.NotNull(game.DAM());
+        Assert.NotNull(game.GetDamageReport());
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class DAMTests
     {
         var game = GameBuilder.getGame();
 
-        var result = game.DAM();
+        var result = game.GetDamageReport();
 
         Assert.NotNull(result.getResults<DAM>());
         Assert.Equal(eCommandResult.OK, result.eCommandResult);
@@ -41,7 +41,7 @@ public class DAMTests
         game.Galaxy.Starship.setDeviceDamage(eDevice.SRS, -1);
         game.Galaxy.Starship.setDeviceDamage(eDevice.TOR, -1.5);
 
-        var result = game.DAM().getResults<DAM>();
+        var result = game.GetDamageReport().getResults<DAM>();
         Assert.Equal(3, result!.Devices.Count);
 
 
