@@ -510,7 +510,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: robm675/RobsSpacePatrol.CSharp
-          ref: main
+          ref: ${{ needs.validate-consumers.outputs.csharp_sha }}
           path: RobsSpacePatrol.CSharp
           token: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
 
@@ -518,7 +518,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: robm675/RobsSpacePatrol.API
-          ref: main
+          ref: ${{ needs.validate-consumers.outputs.api_sha }}
           path: RobsSpacePatrol.API
           token: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
 
@@ -537,7 +537,7 @@ jobs:
 
           Write-Host "Validated CSharp commit: $csharpSha"
           Write-Host "Validated API commit: $apiSha"
-          
+
       - name: Download CoreLogic NuGet packages
         uses: actions/download-artifact@v4
         with:
