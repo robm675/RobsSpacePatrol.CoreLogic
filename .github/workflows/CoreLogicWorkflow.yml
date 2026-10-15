@@ -155,6 +155,9 @@ jobs:
   validate-consumers:
     name: Validate CSharp and API against new packages
     needs: build
+    outputs:
+      csharp_sha: ${{ steps.consumer-commits.outputs.csharp_sha }}
+      api_sha: ${{ steps.consumer-commits.outputs.api_sha }}    
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     permissions:
@@ -519,6 +522,22 @@ jobs:
           path: RobsSpacePatrol.API
           token: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
 
+      - name: Record consumer commits
+        id: consumer-commits
+        shell: pwsh
+        run: |
+          $csharpSha = (git -C RobsSpacePatrol.CSharp rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Cannot determine CSharp commit" }
+
+          $apiSha = (git -C RobsSpacePatrol.API rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Cannot determine API commit" }
+
+          "csharp_sha=$csharpSha" >> $env:GITHUB_OUTPUT
+          "api_sha=$apiSha" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Validated CSharp commit: $csharpSha"
+          Write-Host "Validated API commit: $apiSha"
+          
       - name: Download CoreLogic NuGet packages
         uses: actions/download-artifact@v4
         with:
