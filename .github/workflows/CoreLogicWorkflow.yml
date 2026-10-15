@@ -19,6 +19,15 @@ on:
         type: boolean
         default: false
 
+      coordinated_release:
+        description: 'Require matching CSharp and API feature branches'
+        required: true
+        type: boolean
+        default: false
+
+
+
+
 concurrency:
   group: corelogic-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -72,7 +81,6 @@ jobs:
 
         Write-Host "Package-related changes: $value"
 
-        
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -112,8 +120,6 @@ jobs:
 
           Write-Host "$project => $ciVersion"
         }
-
-
         
     - name: Restore dependencies
       run: dotnet restore RobsSpacePatrol.CoreLogic.sln       
@@ -125,9 +131,6 @@ jobs:
     - name: Test CoreLogic
       run: dotnet run --project RobsSpacePatrol.Library.Tests --configuration Release --no-build
     
-    
-
-
     - name: Create CoreLogic NuGet packages
       shell: pwsh
       run: |
@@ -149,8 +152,6 @@ jobs:
           throw "Failed to package RobsSpacePatrol.DTO"
         }
 
-
-    
     - name: Upload NuGet packages
       uses: actions/upload-artifact@v4
       with:
