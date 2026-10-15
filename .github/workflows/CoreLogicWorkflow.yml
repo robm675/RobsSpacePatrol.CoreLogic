@@ -12,12 +12,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      prepare_release:
+        description: 'Prepare CoreLogic package update pull requests'
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
   group: corelogic-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
-
-
 
 jobs:
   build:
@@ -490,16 +494,14 @@ jobs:
       - name: Stop API
         cancel: api-server
 
-
   propose-updates:
     name: Propose CSharp and API package updates
     needs: [build, validate-consumers]
     if: |
-      github.event_name == 'push' &&
+      github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/main' &&
-      needs.build.outputs.package_changed == 'true'
+      inputs.prepare_release == true
 
-      
     runs-on: windows-latest
 
     steps:
@@ -544,7 +546,6 @@ jobs:
         run: |
           gh auth status
           gh api repos/robm675/RobsSpacePatrol.CSharp --jq '.full_name'
-
 
       - name: Create update branches and pull requests
         shell: pwsh
