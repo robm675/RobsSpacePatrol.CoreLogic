@@ -19,14 +19,6 @@ on:
         type: boolean
         default: false
 
-      coordinated_release:
-        description: 'Require matching CSharp and API feature branches'
-        required: true
-        type: boolean
-        default: false
-
-
-
 
 concurrency:
   group: corelogic-${{ github.workflow }}-${{ github.ref }}
