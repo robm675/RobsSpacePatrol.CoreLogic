@@ -804,10 +804,7 @@ jobs:
   propose-updates:
     name: Propose CSharp and API package updates
     needs: [build, validate-consumers]
-    if: |
-      github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/main' &&
-      inputs.prepare_release == true
+    if: ${{ false }}
 
     runs-on: windows-latest
 
