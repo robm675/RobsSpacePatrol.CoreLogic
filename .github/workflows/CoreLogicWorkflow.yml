@@ -1139,30 +1139,99 @@ jobs:
     permissions:
       contents: read
 
-    steps:
-      - name: Verify release pull requests
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
-          RELEASE_BRANCH: ${{ inputs.release_branch }}
-        run: |
-          set -euo pipefail
 
-          if [[ -z "$RELEASE_BRANCH" ]]; then
-            echo "A release branch must be specified."
+
+
+    - name: Verify release pull requests
+      shell: bash
+      env:
+        GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+        RELEASE_BRANCH: ${{ inputs.release_branch }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "$RELEASE_BRANCH" ]]; then
+          echo "::error::No release branch supplied."
+          exit 1
+        fi
+
+        echo "=== COORDINATED RELEASE PREFLIGHT ==="
+        echo "Release branch: $RELEASE_BRANCH"
+
+        for repo in RobsSpacePatrol.CSharp RobsSpacePatrol.API; do
+          full_repo="robm675/$repo"
+          echo ""
+          echo "Checking $full_repo"
+
+          # Require exactly one open PR for this release branch.
+          prs=$(gh pr list \
+            --repo "$full_repo" \
+            --state open \
+            --base main \
+            --head "$RELEASE_BRANCH" \
+            --json number)
+
+          count=$(echo "$prs" | jq 'length')
+
+          if [[ "$count" -ne 1 ]]; then
+            echo "::error::$repo must have exactly one matching open PR. Found $count."
             exit 1
           fi
 
-          for repo in RobsSpacePatrol.CSharp RobsSpacePatrol.API; do
-            echo "Checking $repo"
+          number=$(echo "$prs" | jq -r '.[0].number')
 
-            gh pr list \
-              --repo "robm675/$repo" \
-              --state open \
-              --base main \
-              --head "$RELEASE_BRANCH" \
-              --json number,title,headRefName,url
-          done
+          # Read the proposed release and its target commit.
+          pr=$(gh pr view "$number" \
+            --repo "$full_repo" \
+            --json state,isDraft,headRefOid,baseRefOid,mergeable)
 
-          echo "Approval received. Release PR inspection completed."
-          echo "DRY RUN: No PRs have been merged."
+          state=$(echo "$pr" | jq -r '.state')
+          draft=$(echo "$pr" | jq -r '.isDraft')
+          head_sha=$(echo "$pr" | jq -r '.headRefOid')
+          base_sha=$(echo "$pr" | jq -r '.baseRefOid')
+          mergeable=$(echo "$pr" | jq -r '.mergeable')
+
+          if [[ "$state" != "OPEN" || "$draft" != "false" ]]; then
+            echo "::error::$repo PR is closed or still a draft."
+            exit 1
+          fi
+
+          if [[ "$mergeable" != "MERGEABLE" ]]; then
+            echo "::error::$repo PR is not confirmed mergeable: $mergeable"
+            exit 1
+          fi
+
+          # Confirm that the PR still targets current main.
+          current_main=$(gh api \
+            "repos/$full_repo/git/ref/heads/main" \
+            --jq '.object.sha')
+
+          if [[ "$base_sha" != "$current_main" ]]; then
+            echo "::error::$repo main differs from the PR base."
+            exit 1
+          fi
+
+          # Confirm that the PR head is still its remote branch tip.
+          current_head=$(gh api \
+            "repos/$full_repo/git/ref/heads/$RELEASE_BRANCH" \
+            --jq '.object.sha')
+
+          if [[ "$head_sha" != "$current_head" ]]; then
+            echo "::error::$repo release branch changed."
+            exit 1
+          fi
+
+          echo "PR #$number"
+          echo "Release SHA: $head_sha"
+          echo "Main SHA:    $base_sha"
+
+          # Require the PR's current checks to pass.
+          echo "Checking CI status..."
+          gh pr checks "$number" --repo "$full_repo" --fail-fast
+
+          echo "$repo passed pre-merge verification."
+        done
+
+        echo ""
+        echo "Both repositories passed release verification."
+        echo "DRY RUN: No pull requests were merged."
