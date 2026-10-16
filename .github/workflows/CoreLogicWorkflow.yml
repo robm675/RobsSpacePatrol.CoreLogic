@@ -519,8 +519,10 @@ jobs:
     needs: [build, validate-consumers]
 
     if: |
-      github.event_name == 'push' &&
-      startsWith(github.ref, 'refs/heads/feature/')
+      (github.event_name == 'push' &&
+       startsWith(github.ref, 'refs/heads/feature/')) ||
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.prepare_release == true)
 
     runs-on: windows-latest
 
