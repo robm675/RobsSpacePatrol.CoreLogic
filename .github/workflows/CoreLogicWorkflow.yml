@@ -569,6 +569,26 @@ jobs:
             }
           }
 
+          $validatedSha = (git -C $repo rev-parse HEAD).Trim()
+
+          $branch = '${{ github.ref_name }}'
+          $remoteBranch = "refs/remotes/origin/$branch"
+
+          git -C $repo show-ref --verify --quiet $remoteBranch
+
+          if ($LASTEXITCODE -eq 0) {
+              $latestSha = (git -C $repo rev-parse $remoteBranch).Trim()
+
+              if ($validatedSha -ne $latestSha) {
+                  throw "$repo feature branch changed since validation."
+              }
+
+              Write-Host "$repo feature branch matches validated commit."
+          }
+          else {
+              Write-Host "$repo uses main; no matching feature branch."
+          }
+
 
       - name: Stage validated NuGet packages
         shell: pwsh
@@ -580,9 +600,6 @@ jobs:
             -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
 
           Write-Host "Validated NuGet packages staged successfully."
-
-
-
 
       - name: Preview proposed changes
         shell: pwsh
