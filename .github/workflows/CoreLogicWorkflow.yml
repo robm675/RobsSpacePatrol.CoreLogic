@@ -866,7 +866,17 @@ jobs:
 
 
 
+              # Refresh remote branches immediately before publishing.
+              git fetch origin --prune
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Unable to refresh remote branches for $repo"
+              }
 
+              # Verify that main has not advanced beyond the validated source.
+              git merge-base --is-ancestor origin/main HEAD
+              if ($LASTEXITCODE -ne 0) {
+                  throw "$repo main has changed. Run validation again before publishing."
+              }
 
 
 
