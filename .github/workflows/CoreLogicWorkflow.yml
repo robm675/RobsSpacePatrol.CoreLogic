@@ -841,6 +841,37 @@ jobs:
                 continue
               }
 
+
+              $existingPRs = gh pr list `
+                  --repo "robm675/$repo" `
+                  --state open `
+                  --base main `
+                  --json number,headRefName,title | ConvertFrom-Json
+
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Unable to check existing PRs for $repo"
+              }
+
+              $duplicate = @(
+                  $existingPRs | Where-Object {
+                      $_.headRefName -eq $releaseBranch
+                  }
+              )
+
+              if ($duplicate.Count -gt 0) {
+                  Write-Host "Release PR already exists for $repo. Skipping."
+                  continue
+              }
+
+
+
+
+
+
+
+
+
+
               git push --set-upstream origin $releaseBranch
               if ($LASTEXITCODE -ne 0) {
                 throw "Unable to push release branch for $repo"
