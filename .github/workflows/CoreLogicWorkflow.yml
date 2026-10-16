@@ -19,6 +19,17 @@ on:
         type: boolean
         default: false
 
+      merge_release:
+        description: 'Approve and merge an existing coordinated release'
+        required: true
+        type: boolean
+        default: false
+
+      release_branch:
+        description: 'Existing release branch name in CSharp and API'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: corelogic-${{ github.workflow }}-${{ github.ref }}
@@ -996,11 +1007,6 @@ jobs:
           Write-Host "No pull requests were merged."
 
 
-
-
-
-
-
   propose-updates:
     name: Propose CSharp and API package updates
     needs: [build, validate-consumers]
@@ -1117,3 +1123,46 @@ jobs:
               Pop-Location
             }
           }
+
+
+  merge-release:
+    name: Approve coordinated release
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.merge_release == true
+
+    runs-on: ubuntu-latest
+
+    environment: release-approval
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Verify release pull requests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$RELEASE_BRANCH" ]]; then
+            echo "A release branch must be specified."
+            exit 1
+          fi
+
+          for repo in RobsSpacePatrol.CSharp RobsSpacePatrol.API; do
+            echo "Checking $repo"
+
+            gh pr list \
+              --repo "robm675/$repo" \
+              --state open \
+              --base main \
+              --head "$RELEASE_BRANCH" \
+              --json number,title,headRefName,url
+          done
+
+          echo "Approval received. Release PR inspection completed."
+          echo "DRY RUN: No PRs have been merged."
