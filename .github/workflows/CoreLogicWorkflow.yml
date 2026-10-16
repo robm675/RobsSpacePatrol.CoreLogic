@@ -797,7 +797,64 @@ jobs:
           Write-Host "Release preparation preview completed."
           Write-Host "No branches were pushed."
           Write-Host "No pull requests were created."
+          
+      - name: Publish release pull requests
+        if: ${{ false }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
 
+          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
+            throw "CROSS_REPO_WRITE_TOKEN is missing."
+          }
+
+          $releaseBranch = "release-preview-${{ github.run_id }}-${{ github.run_attempt }}"
+
+          foreach ($repo in @(
+            'RobsSpacePatrol.CSharp',
+            'RobsSpacePatrol.API'
+          )) {
+            Write-Host "Publishing release for $repo"
+
+            Push-Location $repo
+            try {
+              $expectedBranch = (git branch --show-current).Trim()
+              if ($LASTEXITCODE -ne 0 -or $expectedBranch -ne $releaseBranch) {
+                throw "Unexpected release branch in $repo"
+              }
+
+              $changes = @(git diff --name-only origin/main HEAD)
+              if ($LASTEXITCODE -ne 0) {
+                throw "Cannot inspect release changes in $repo"
+              }
+
+              if ($changes.Count -eq 0) {
+                Write-Host "No changes to publish for $repo"
+                continue
+              }
+
+              git push --set-upstream origin $releaseBranch
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to push release branch for $repo"
+              }
+
+              gh pr create `
+                --repo "robm675/$repo" `
+                --base main `
+                --head $releaseBranch `
+                --title "Coordinated CoreLogic release ${{ github.run_id }}" `
+                --body "Prepared from validated CoreLogic packages and consumer commits. Review checks before merging."
+
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to create release PR for $repo"
+              }
+            }
+            finally {
+              Pop-Location
+            }
+          }
 
 
 
