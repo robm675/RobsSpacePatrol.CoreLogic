@@ -802,7 +802,13 @@ jobs:
 
 
       - name: Publish release pull requests
-        if: ${{ false }}
+      
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          inputs.prepare_release == true
+
+
+
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
@@ -954,7 +960,7 @@ jobs:
           Write-Host "No branches or pull requests will be published."
           return
 
-          
+
           # PASS 2: Publish the prepared release branches and PRs.
 
           Write-Host "=== PUBLISH RELEASE ==="
