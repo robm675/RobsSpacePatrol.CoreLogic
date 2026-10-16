@@ -490,6 +490,123 @@ jobs:
       - name: Stop API
         cancel: api-server
 
+
+  prepare-release-preview:
+    name: Preview coordinated release
+    needs: [build, validate-consumers]
+
+    if: |
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/heads/feature/')
+
+    runs-on: windows-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout CoreLogic scripts
+        uses: actions/checkout@v4
+        with:
+          path: RobsSpacePatrol.CoreLogic
+
+      - name: Checkout validated CSharp commit
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.CSharp
+          ref: ${{ needs.validate-consumers.outputs.csharp_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: RobsSpacePatrol.CSharp
+
+      - name: Checkout validated API commit
+        uses: actions/checkout@v4
+        with:
+          repository: robm675/RobsSpacePatrol.API
+          ref: ${{ needs.validate-consumers.outputs.api_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: RobsSpacePatrol.API
+
+      - name: Download validated NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: corelogic-nuget-packages
+          path: ${{ runner.temp }}/corelogic-packages
+
+      - name: Inspect validated consumer commits
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          foreach ($repo in @(
+            'RobsSpacePatrol.CSharp',
+            'RobsSpacePatrol.API'
+          )) {
+            Write-Host "================================"
+            Write-Host "Repository: $repo"
+
+            $sha = git -C $repo rev-parse HEAD
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Cannot determine commit for $repo"
+            }
+
+            Write-Host "Validated commit: $sha"
+
+            git -C $repo log -1 --format="%s"
+
+            git -C $repo diff --name-status origin/main HEAD
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Cannot compare $repo against main"
+            }
+
+            git -C $repo merge-base --is-ancestor origin/main HEAD
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "$repo is not based on current main. Revalidate before preparing a release."
+            }
+          }
+
+      - name: Stage validated NuGet packages
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
+            -Workspace $env:GITHUB_WORKSPACE `
+            -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Package staging failed"
+          }
+
+      - name: Preview proposed changes
+        shell: pwsh
+        run: |
+          foreach ($repo in @(
+            'RobsSpacePatrol.CSharp',
+            'RobsSpacePatrol.API'
+          )) {
+            Write-Host "================================"
+            Write-Host "Release preview: $repo"
+
+            Write-Host "Source changes versus main:"
+            git -C $repo diff --stat origin/main HEAD
+
+            Write-Host "Staged working-tree changes:"
+            git -C $repo status --short
+
+            Write-Host "NuGet reference changes:"
+            git -C $repo diff -- '*.csproj'
+          }
+
+          Write-Host "Release preparation preview completed."
+          Write-Host "No branches were pushed."
+          Write-Host "No pull requests were created."
+
+
+
+
   propose-updates:
     name: Propose CSharp and API package updates
     needs: [build, validate-consumers]
