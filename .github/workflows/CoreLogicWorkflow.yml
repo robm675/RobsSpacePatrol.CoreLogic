@@ -956,9 +956,6 @@ jobs:
           }
 
           Write-Host "Both repositories passed preflight."
-          Write-Host "DRY RUN: Preflight completed successfully."
-          Write-Host "No branches or pull requests will be published."
-          return
 
 
           # PASS 2: Publish the prepared release branches and PRs.
