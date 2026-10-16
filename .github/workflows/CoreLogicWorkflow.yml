@@ -588,7 +588,7 @@ jobs:
           else {
               Write-Host "$repo uses main; no matching feature branch."
           }
-
+          $global:LASTEXITCODE = 0
 
       - name: Stage validated NuGet packages
         shell: pwsh
