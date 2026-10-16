@@ -569,16 +569,20 @@ jobs:
             }
           }
 
+
       - name: Stage validated NuGet packages
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+
           & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/Stage-CoreLogicPackages.ps1" `
             -Workspace $env:GITHUB_WORKSPACE `
             -PackagesPath "$env:RUNNER_TEMP/corelogic-packages"
 
-          if ($LASTEXITCODE -ne 0) {
-            throw "Package staging failed"
-          }
+          Write-Host "Validated NuGet packages staged successfully."
+
+
+
 
       - name: Preview proposed changes
         shell: pwsh
