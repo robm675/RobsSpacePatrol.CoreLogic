@@ -228,6 +228,29 @@ jobs:
           path: RobsSpacePatrol.API
           persist-credentials: false
 
+      - name: Record consumer commits
+        id: consumer-commits
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $csharpSha = (git -C RobsSpacePatrol.CSharp rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Cannot determine CSharp commit" }
+
+          $apiSha = (git -C RobsSpacePatrol.API rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Cannot determine API commit" }
+
+          "csharp_sha=$csharpSha" >> $env:GITHUB_OUTPUT
+          "api_sha=$apiSha" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Validated CSharp commit: $csharpSha"
+          Write-Host "Validated API commit: $apiSha"
+
+
+
+
+
+
       - name: Download CoreLogic package artifact
         uses: actions/download-artifact@v4
         with:
@@ -689,6 +712,14 @@ jobs:
           foreach ($entry in $repositories) {
             $repo = $entry.Name
             $validatedSha = $entry.ValidatedSha
+
+            if ([string]::IsNullOrWhiteSpace($validatedSha)) {
+                throw "Missing validated commit SHA for $repo."
+            }
+
+            if ([string]::IsNullOrWhiteSpace($validatedSha)) {
+                throw "Missing validated commit SHA for $repo. Check validate-consumers job outputs."
+            }            
             $sourceBranch = '${{ github.ref_name }}'
 
             Write-Host "================================"
