@@ -797,12 +797,16 @@ jobs:
           Write-Host "Release preparation preview completed."
           Write-Host "No branches were pushed."
           Write-Host "No pull requests were created."
-          
+
       - name: Publish release pull requests
         if: ${{ false }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+          gh auth setup-git
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to configure Git authentication"
+          }          
         run: |
           $ErrorActionPreference = 'Stop'
 
