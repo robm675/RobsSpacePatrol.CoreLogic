@@ -38,51 +38,10 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-    outputs:
-      package_changed: ${{ steps.changes.outputs.package_changed }}
-
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-
-    - name: Detect package-related changes
-      id: changes
-      shell: pwsh
-      run: |
-        $before = '${{ github.event.before }}'
-        $after = '${{ github.sha }}'
-
-        # Default to updating packages unless we can establish
-        # that this was a workflow-only change.
-        $packageChanged = $true
-
-        if ('${{ github.event_name }}' -eq 'push' -and
-            $before -and
-            $before -notmatch '^0+$') {
-
-          $files = @(git diff --name-only $before $after)
-
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to determine changed files"
-          }
-
-          Write-Host "Changed files:"
-          $files | ForEach-Object { Write-Host "  $_" }
-
-          if ($files.Count -gt 0) {
-            $packageChanged = @(
-              $files | Where-Object {
-                $_ -notmatch '^\.github/workflows/'
-              }
-            ).Count -gt 0
-          }
-        }
-
-        $value = $packageChanged.ToString().ToLowerInvariant()
-        "package_changed=$value" >> $env:GITHUB_OUTPUT
-
-        Write-Host "Package-related changes: $value"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -511,11 +470,40 @@ jobs:
         run: |
           & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/Show-ReleasePreview.ps1"
 
+      - name: Create immutable release manifest
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          inputs.prepare_release == true &&
+          inputs.merge_release != true
+        shell: pwsh
+        env:
+          CSHARP_VALIDATED_SHA: ${{ needs.validate-consumers.outputs.csharp_sha }}
+          API_VALIDATED_SHA: ${{ needs.validate-consumers.outputs.api_sha }}
+          RELEASE_BRANCH: release-preview-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/New-ReleaseManifest.ps1" -OutputPath "$env:RUNNER_TEMP/coordinated-release-manifest.json"
+
+      - name: Upload immutable release manifest
+        if: |
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          inputs.prepare_release == true &&
+          inputs.merge_release != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: coordinated-release-manifest
+          path: ${{ runner.temp }}/coordinated-release-manifest.json
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Publish release pull requests
       
         if: |
           github.event_name == 'workflow_dispatch' &&
-          inputs.prepare_release == true
+          github.ref == 'refs/heads/main' &&
+          inputs.prepare_release == true &&
+          inputs.merge_release != true
 
 
 
@@ -553,6 +541,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+          CORELOGIC_TOKEN: ${{ github.token }}
+          CSHARP_CI_WORKFLOW: ${{ vars.CSHARP_CI_WORKFLOW }}
+          API_CI_WORKFLOW: ${{ vars.API_CI_WORKFLOW }}
           RELEASE_BRANCH: ${{ inputs.release_branch }}
           DRY_RUN: 'false'
         run: bash Scripts/CI/Merge-Release.sh
