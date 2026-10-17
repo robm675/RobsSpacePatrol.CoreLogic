@@ -1226,7 +1226,7 @@ jobs:
 
             # Require the PR's current checks to pass.
             echo "Checking CI status..."
-            gh pr checks "$number" --repo "$full_repo" --fail-fast
+            gh pr checks "$number" --repo "$full_repo"
 
             echo "$repo passed pre-merge verification."
           done
