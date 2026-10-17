@@ -572,59 +572,12 @@ jobs:
 
       - name: Inspect validated consumer commits
         shell: pwsh
+        env:
+          CSHARP_VALIDATED_SHA: ${{ needs.validate-consumers.outputs.csharp_sha }}
+          API_VALIDATED_SHA: ${{ needs.validate-consumers.outputs.api_sha }}
+          SOURCE_BRANCH: ${{ github.ref_name }}
         run: |
-          $ErrorActionPreference = 'Stop'
-
-          foreach ($repo in @(
-            'RobsSpacePatrol.CSharp',
-            'RobsSpacePatrol.API'
-          )) {
-            Write-Host "================================"
-            Write-Host "Repository: $repo"
-
-            $sha = git -C $repo rev-parse HEAD
-
-            if ($LASTEXITCODE -ne 0) {
-              throw "Cannot determine commit for $repo"
-            }
-
-            Write-Host "Validated commit: $sha"
-
-            git -C $repo log -1 --format="%s"
-
-            git -C $repo diff --name-status origin/main HEAD
-
-            if ($LASTEXITCODE -ne 0) {
-              throw "Cannot compare $repo against main"
-            }
-
-            git -C $repo merge-base --is-ancestor origin/main HEAD
-
-            if ($LASTEXITCODE -ne 0) {
-              throw "$repo is not based on current main. Revalidate before preparing a release."
-            }
-          }
-
-          $validatedSha = (git -C $repo rev-parse HEAD).Trim()
-
-          $branch = '${{ github.ref_name }}'
-          $remoteBranch = "refs/remotes/origin/$branch"
-
-          git -C $repo show-ref --verify --quiet $remoteBranch
-
-          if ($LASTEXITCODE -eq 0) {
-              $latestSha = (git -C $repo rev-parse $remoteBranch).Trim()
-
-              if ($validatedSha -ne $latestSha) {
-                  throw "$repo feature branch changed since validation."
-              }
-
-              Write-Host "$repo feature branch matches validated commit."
-          }
-          else {
-              Write-Host "$repo uses main; no matching feature branch."
-          }
-          $global:LASTEXITCODE = 0
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/Inspect-ConsumerCommits.ps1"
 
       - name: Stage validated NuGet packages
         shell: pwsh
