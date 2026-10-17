@@ -590,14 +590,10 @@ jobs:
 
           Write-Host "Validated NuGet packages staged successfully."
 
-
-
       - name: Create local release branches
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/Prepare-ReleaseBranches.ps1"
-
-
 
       - name: Verify release branches are current
         shell: pwsh
@@ -608,33 +604,10 @@ jobs:
         run: |
           & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/Verify-ReleaseBranches.ps1"
 
-
       - name: Preview proposed changes
         shell: pwsh
         run: |
-          foreach ($repo in @(
-            'RobsSpacePatrol.CSharp',
-            'RobsSpacePatrol.API'
-          )) {
-            Write-Host "================================"
-            Write-Host "Release preview: $repo"
-
-            Write-Host "Source changes versus main:"
-            git -C $repo diff --stat origin/main HEAD
-
-            Write-Host "Staged working-tree changes:"
-            git -C $repo status --short
-
-            Write-Host "NuGet reference changes:"
-            git -C $repo diff -- '*.csproj'
-          }
-
-          Write-Host "Release preparation preview completed."
-          Write-Host "No branches were pushed."
-          Write-Host "No pull requests were created."
-
-
-
+          & "$env:GITHUB_WORKSPACE/RobsSpacePatrol.CoreLogic/Scripts/CI/Show-ReleasePreview.ps1"
 
       - name: Publish release pull requests
       
