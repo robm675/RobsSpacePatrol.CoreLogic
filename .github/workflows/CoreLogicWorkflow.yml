@@ -1145,7 +1145,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
           RELEASE_BRANCH: ${{ inputs.release_branch }}
-          DRY_RUN: 'true'
+          DRY_RUN: 'false'
         run: |
           set -euo pipefail
 
