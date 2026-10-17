@@ -1235,3 +1235,65 @@ jobs:
           echo "Both repositories passed release verification."
           echo "DRY RUN: No pull requests were merged."
   
+      - name: Merge and verify release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_WRITE_TOKEN }}
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
+          DRY_RUN: 'true'
+        run: |
+          set -euo pipefail
+
+          echo "=== COORDINATED RELEASE MERGE ==="
+          echo "Release branch: $RELEASE_BRANCH"
+
+          for repo in RobsSpacePatrol.CSharp RobsSpacePatrol.API; do
+            full_repo="robm675/$repo"
+
+            echo ""
+            echo "Preparing $full_repo"
+
+            # Find the specific release PR.
+            number=$(gh pr list \
+              --repo "$full_repo" \
+              --state open \
+              --base main \
+              --head "$RELEASE_BRANCH" \
+              --json number \
+              --jq '.[0].number // empty')
+
+            if [[ -z "$number" ]]; then
+              echo "::error::Release PR not found in $repo."
+              exit 1
+            fi
+
+            # Retrieve the exact head commit.
+            expected_sha=$(gh pr view "$number" \
+              --repo "$full_repo" \
+              --json headRefOid \
+              --jq '.headRefOid')
+
+            if [[ -z "$expected_sha" ]]; then
+              echo "::error::Cannot determine PR head for $repo."
+              exit 1
+            fi
+
+            echo "PR #$number"
+            echo "Expected commit: $expected_sha"
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "DRY RUN: Would merge $full_repo PR #$number"
+              echo "DRY RUN: Would then verify main CI"
+              continue
+            fi
+
+            # Final checks must be repeated immediately before
+            # the real merge. These will be added before enabling it.
+
+            echo "::error::Real merge not yet enabled."
+            exit 1
+          done
+
+          echo ""
+          echo "Merge preparation completed."
+          echo "DRY RUN: No repositories were modified."  
